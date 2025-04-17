@@ -4,6 +4,7 @@ require('dotenv').config();
 // Import required packages
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 
 // Create the Express app instance
 const app = express();
@@ -23,6 +24,20 @@ app.get('/', (req, res) => {
   // Send a simple JSON response
   res.json({ message: 'Welcome to the No Mercy Backend API!' });
 });
+
+// --- Database Connection ---   // NEW SECTION START
+const connectDB = async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      console.log('MongoDB Connected...');
+    } catch (err) {
+      console.error('MongoDB Connection Error:', err.message);
+      // Exit process with failure
+      process.exit(1);
+    }
+  };
+  
+  connectDB(); // Call the function to connect DB // NEW SECTION END
 
 // --- Server Activation ---
 // Get the port from environment variables or default to 5000
