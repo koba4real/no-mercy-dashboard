@@ -93,3 +93,5 @@ export_*.tar.gz
 
 # Temp files
 *.tmp
+
+Mongo DB passwords.txt

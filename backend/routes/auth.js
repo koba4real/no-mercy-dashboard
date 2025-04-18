@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router(); // Create an Express router instance
 const bcrypt = require('bcryptjs'); // Import bcryptjs
 const User = require('../models/User'); // Import the User model
+const PlayerProfile = require('../models/PlayerProfile');
 const jwt = require('jsonwebtoken');
 
 // Import necessary things later (User model, bcryptjs, jsonwebtoken)
@@ -44,6 +45,17 @@ router.post('/register', async (req, res) => {
   
       // 6. Save user to database
       await newUser.save();
+      // ---> START ADDING PROFILE CREATION HERE <---
+      // 6a. Create associated PlayerProfile
+      const newProfile = new PlayerProfile({
+        user: newUser._id, // Link profile to the newly created user's ID
+        // Default values for score, wins, losses are handled by the schema
+      });
+
+      // 6b. Save the new profile to the database
+      await newProfile.save();
+      console.log('PlayerProfile created for user:', newUser._id); // Log success
+      // ---> END PROFILE CREATION <---
   
       // 7. Send success response (DON'T send the password back, even hashed)
       // Status 201 means "Created"
