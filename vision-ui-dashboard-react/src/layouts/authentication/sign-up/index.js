@@ -17,6 +17,7 @@
 */
 
 import { useState } from "react";
+import axios from 'axios';
 
 // react-router-dom components
 import { Link } from "react-router-dom";
@@ -49,10 +50,70 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 // Images
 import bgSignIn from "assets/images/signUpImage.png";
 
-function SignIn() {
+function SignUp() {
   const [rememberMe, setRememberMe] = useState(true);
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
+    // State for form fields
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+    // State for feedback messages
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Optional: for loading state
+
+  const handleRegister = async (event) => {
+    event.preventDefault(); // Prevent default HTML form submission behavior
+    setError(''); // Clear previous errors/success messages
+    setSuccess('');
+    setIsLoading(true); // Indicate loading started
+  
+    // Basic validation (can add more complex checks later)
+    if (!username || !email || !password) {
+      setError('Please fill in all fields.');
+      setIsLoading(false); // Stop loading
+      return; // Stop the function here
+    }
+  
+    // Prepare the data for the backend
+    const config = {
+      headers: {
+        'Content-Type': 'application/json', // Tell backend we're sending JSON
+      },
+    };
+    const body = JSON.stringify({ username, email, password }); // Create JSON string from state
+  
+    try {
+      // Send the POST request using axios
+      // Ensure the URL points to your running backend server
+      const res = await axios.post('http://localhost:5001/api/auth/register', body, config);
+  
+      // ---- If request is successful ----
+      console.log('Registration successful:', res.data); // Log backend response (optional)
+      setSuccess('Registration successful! Please log in.'); // Set success message for user
+      // Clear the form fields
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      // Optionally redirect to login page:
+      // setTimeout(() => { history.push('/authentication/sign-in'); }, 2000); // Needs useHistory hook from react-router-dom
+  
+    } catch (err) {
+      // ---- If request fails ----
+      console.error('Registration error:', err.response ? err.response.data : err.message);
+      // Try to get the specific error message from the backend response
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message); // Display backend error (e.g., "User already exists")
+      } else {
+        setError('Registration failed. Please try again later.'); // Generic error
+      }
+    } finally {
+      // This block runs whether the try succeeded or failed
+      setIsLoading(false); // Indicate loading finished
+    }
+  };
 
   return (
     <CoverLayout
@@ -183,7 +244,7 @@ function SignIn() {
           <VuiBox mb={2}>
             <VuiBox mb={1} ml={0.5}>
               <VuiTypography component="label" variant="button" color="white" fontWeight="medium">
-                Name
+              Username {/* <<< Optionally change label from "Name" to "Username" */}
               </VuiTypography>
             </VuiBox>
             <GradientBorder
@@ -197,17 +258,18 @@ function SignIn() {
               )}
             >
               <VuiInput
-                placeholder="Your full name..."
-                sx={({ typography: { size } }) => ({
-                  fontSize: size.sm,
-                })}
+                name="username" // <<< ADD THIS (if not already there)
+                placeholder="Your username..." // <<< Optionally change placeholder
+                sx={({ typography: { size } }) => ({ fontSize: size.sm, })}
+                value={username} // <<< ADD THIS
+                onChange={(e) => { setUsername(e.target.value); setError(''); setSuccess(''); }} // <<< ADD THIS
               />
             </GradientBorder>
           </VuiBox>
           <VuiBox mb={2}>
             <VuiBox mb={1} ml={0.5}>
               <VuiTypography component="label" variant="button" color="white" fontWeight="medium">
-                Email
+              Email
               </VuiTypography>
             </VuiBox>
             <GradientBorder
@@ -222,10 +284,11 @@ function SignIn() {
             >
               <VuiInput
                 type="email"
+                name="email" // <<< ADD THIS (if not already there)
                 placeholder="Your email..."
-                sx={({ typography: { size } }) => ({
-                  fontSize: size.sm,
-                })}
+                sx={({ typography: { size } }) => ({ fontSize: size.sm, })}
+                value={email} // <<< ADD THIS
+                onChange={(e) => { setEmail(e.target.value); setError(''); setSuccess(''); }} // <<< ADD THIS
               />
             </GradientBorder>
           </VuiBox>
@@ -247,10 +310,11 @@ function SignIn() {
             >
               <VuiInput
                 type="password"
+                name="password" // <<< ADD THIS (if not already there)
                 placeholder="Your password..."
-                sx={({ typography: { size } }) => ({
-                  fontSize: size.sm,
-                })}
+                sx={({ typography: { size } }) => ({ fontSize: size.sm, })}
+                value={password} // <<< ADD THIS
+                onChange={(e) => { setPassword(e.target.value); setError(''); setSuccess(''); }} // <<< ADD THIS
               />
             </GradientBorder>
           </VuiBox>
@@ -266,9 +330,29 @@ function SignIn() {
               &nbsp;&nbsp;&nbsp;&nbsp;Remember me
             </VuiTypography>
           </VuiBox>
+
+          {/* ==== INSERT FEEDBACK MESSAGES HERE ==== */}
+          {/* Display Success Message */}
+          {success && (
+            <VuiBox mt={2} mb={2} p={1} sx={{ border: '1px solid', borderColor: palette.success.main , borderRadius: '5px', backgroundColor: 'rgba(76, 175, 80, 0.1)'}}>
+              <VuiTypography variant="caption" color="success" fontWeight="medium">
+                {success}
+              </VuiTypography>
+            </VuiBox>
+          )}
+
+          {/* Display Error Message */}
+          {error && (
+            <VuiBox mt={2} mb={2} p={1} sx={{ border: '1px solid', borderColor: palette.error.main, borderRadius: '5px', backgroundColor: 'rgba(244, 67, 54, 0.1)' }}>
+              <VuiTypography variant="caption" color="error" fontWeight="medium">
+                {error}
+              </VuiTypography>
+            </VuiBox>
+          )}
+          {/* ==== END FEEDBACK MESSAGES ==== */}
           <VuiBox mt={4} mb={1}>
-            <VuiButton color="info" fullWidth>
-              SIGN UP
+            <VuiButton color="info" fullWidth onClick={handleRegister} disabled={isLoading}   >
+              {isLoading ? 'Signing Up...' : 'SIGN UP'} {/* <<< CHANGE BUTTON TEXT based on isLoading */}
             </VuiButton>
           </VuiBox>
           <VuiBox mt={3} textAlign="center">
@@ -291,4 +375,4 @@ function SignIn() {
   );
 }
 
-export default SignIn;
+export default SignUp;
