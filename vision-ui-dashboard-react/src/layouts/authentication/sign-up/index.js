@@ -18,6 +18,9 @@
 
 import { useState } from "react";
 import axios from 'axios';
+import { useVisionUIController, registerSuccess, authError } from "context"; // <<< ADD THIS (also add authError)
+// ... maybe import useHistory if you want to redirect to login after register ...
+//import { useHistory } from "react-router-dom";
 
 // react-router-dom components
 import { Link } from "react-router-dom";
@@ -52,6 +55,8 @@ import bgSignIn from "assets/images/signUpImage.png";
 
 function SignUp() {
   const [rememberMe, setRememberMe] = useState(true);
+  const [controller, dispatch] = useVisionUIController(); // <<< ADD THIS
+  // const history = useHistory(); // <<< ADD THIS IF REDIRECTING
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
     // State for form fields
@@ -86,32 +91,33 @@ function SignUp() {
     const body = JSON.stringify({ username, email, password }); // Create JSON string from state
   
     try {
-      // Send the POST request using axios
-      // Ensure the URL points to your running backend server
       const res = await axios.post('http://localhost:5001/api/auth/register', body, config);
-  
-      // ---- If request is successful ----
-      console.log('Registration successful:', res.data); // Log backend response (optional)
-      setSuccess('Registration successful! Please log in.'); // Set success message for user
-      // Clear the form fields
+
+      // Handle Success - UPDATED
+      console.log('Registration successful:', res.data);
+      dispatch({ type: "REGISTER_SUCCESS" }); // Dispatch simple success action
+      // Or use the action creator: registerSuccess(dispatch);
+
+      setSuccess('Registration successful! Please log in.');
       setUsername('');
       setEmail('');
       setPassword('');
-      // Optionally redirect to login page:
-      // setTimeout(() => { history.push('/authentication/sign-in'); }, 2000); // Needs useHistory hook from react-router-dom
-  
+      // Optionally redirect:
+      // setTimeout(() => { history.push('/authentication/sign-in'); }, 2000);
+
     } catch (err) {
-      // ---- If request fails ----
-      console.error('Registration error:', err.response ? err.response.data : err.message);
-      // Try to get the specific error message from the backend response
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Display backend error (e.g., "User already exists")
-      } else {
-        setError('Registration failed. Please try again later.'); // Generic error
-      }
+        // Handle Errors - UPDATED
+        console.error('Registration error:', err.response ? err.response.data : err.message);
+        dispatch({ type: "AUTH_ERROR" }); // Dispatch error action to clear any auth state
+        // Or use the action creator: authError(dispatch);
+
+        if (err.response && err.response.data && err.response.data.message) {
+          setError(err.response.data.message);
+        } else {
+          setError('Registration failed. Please try again.');
+        }
     } finally {
-      // This block runs whether the try succeeded or failed
-      setIsLoading(false); // Indicate loading finished
+        setIsLoading(false);
     }
   };
 

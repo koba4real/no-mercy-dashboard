@@ -17,6 +17,8 @@
 */
 
 import { useState, useEffect, useMemo } from "react";
+import { jwtDecode } from "jwt-decode";
+
 
 // react-router components
 import { Route, Switch, Redirect, useLocation } from "react-router-dom";
@@ -46,7 +48,16 @@ import createCache from "@emotion/cache";
 import routes from "routes";
 
 // Vision UI Dashboard React contexts
-import { useVisionUIController, setMiniSidenav, setOpenConfigurator } from "context";
+import {
+  useVisionUIController,
+  setMiniSidenav, // keep existing ones needed
+  setOpenConfigurator,
+  // VVVVV IMPORT AUTH ACTIONS VVVVV
+  setLoading,
+  loginSuccess, // We can reuse loginSuccess to set the initial state
+  logoutUser // Or use logoutUser / authError if token is invalid/missing
+  // ^^^^^ IMPORT AUTH ACTIONS ^^^^^
+} from "context";
 
 export default function App() {
   const [controller, dispatch] = useVisionUIController();
@@ -54,6 +65,63 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+
+   // VVVVV ADD THIS useEffect FOR INITIAL AUTH CHECK VVVVV
+   useEffect(() => {
+    console.log("Checking for token on initial load...");
+    setLoading(dispatch, true); // Start loading
+
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      try {
+         // Decode the token
+         const decoded = jwtDecode(token);
+         console.log("Decoded Token:", decoded);
+
+         // Check if token is expired (jwtDecode adds 'exp' field)
+         // Date.now() is in milliseconds, decoded.exp is in seconds
+         if (decoded.exp * 1000 < Date.now()) {
+           console.log("Token expired.");
+           // Token is expired, treat as logged out
+           localStorage.removeItem('token');
+           logoutUser(dispatch); // Dispatch logout action
+         } else {
+           console.log("Token valid, setting auth state.");
+           // Token is valid, set auth state
+           // Assume payload has { user: { id: '...', username: '...' } } structure
+           // Adjust if your payload structure in handleLogin was different
+           if (decoded.user) {
+             // We need to reconstruct the payload structure expected by loginSuccess
+             const payload = {
+                token: token, // Pass the original token
+                user: decoded.user // Pass the decoded user object
+             };
+             loginSuccess(dispatch, payload); // Dispatch login action
+           } else {
+              // Payload structure unexpected
+              console.error("Token payload structure unexpected", decoded)
+              logoutUser(dispatch)
+           }
+         }
+      } catch (error) {
+         // Error decoding token (it might be invalid/corrupted)
+         console.error("Error decoding token:", error);
+         localStorage.removeItem('token');
+         logoutUser(dispatch); // Treat as logged out
+      }
+    } else {
+      // No token found
+      console.log("No token found in localStorage.");
+      logoutUser(dispatch); // Ensure state is logged out
+    }
+
+    // Intentionally not setting loading to false here;
+    // loginSuccess or logoutUser actions handle that within the reducer.
+
+  }, [dispatch]); // Depend on dispatch - should not change often
+
+  // ^^^^^ ADD THIS useEffect FOR INITIAL AUTH CHECK ^^^^^
 
   // Cache for the rtl
   useMemo(() => {

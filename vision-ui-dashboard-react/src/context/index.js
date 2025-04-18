@@ -59,6 +59,49 @@ function reducer(state, action) {
     case "LAYOUT": {
       return { ...state, layout: action.value };
     }
+    case "LOGIN_SUCCESS":
+    localStorage.setItem('token', action.payload.token); // Store token on login
+    return {
+      ...state,
+      isAuthenticated: true,
+      loading: false,
+      user: action.payload.user,
+      token: action.payload.token,
+    };
+
+    case "REGISTER_SUCCESS": // Maybe useful after registration success, before login
+        return {
+          ...state,
+          loading: false, // Can stop loading after successful registration
+        };
+
+
+    case "AUTH_ERROR":
+    case "LOGOUT":
+      localStorage.removeItem('token'); // Remove token on error/logout
+      return {
+        ...state,
+        isAuthenticated: false,
+        loading: false,
+        user: null,
+        token: null,
+      };
+
+    case "USER_LOADED": // If we implement token validation later
+      return {
+        ...state,
+        isAuthenticated: true,
+        loading: false,
+        user: action.payload, // Payload would be user object {id, username, email}
+        // token might already be in state or loaded from localStorage elsewhere
+      };
+
+    case "SET_LOADING":
+      return {
+        ...state,
+        loading: action.payload, // Set loading true/false
+      };
+    // ^^^^^ ADD AUTH CASES ^^^^^
     default: {
       throw new Error(`Unhandled action type: ${action.type}`);
     }
@@ -76,6 +119,10 @@ function VisionUIControllerProvider({ children }) {
     openConfigurator: false,
     direction: "ltr",
     layout: "dashboard",
+    isAuthenticated: false, // Is the user logged in?
+    user: null,          // Stores user data (id, username, email) if logged in
+    token: null,           // Stores the JWT token
+    loading: true          // Are we still checking auth status on initial app load?
   };
 
   const [controller, dispatch] = useReducer(reducer, initialState);
@@ -108,6 +155,24 @@ const setFixedNavbar = (dispatch, value) => dispatch({ type: "FIXED_NAVBAR", val
 const setOpenConfigurator = (dispatch, value) => dispatch({ type: "OPEN_CONFIGURATOR", value });
 const setDirection = (dispatch, value) => dispatch({ type: "DIRECTION", value });
 const setLayout = (dispatch, value) => dispatch({ type: "LAYOUT", value });
+// VVVVV ADD AUTH ACTION FUNCTIONS VVVVV
+const loginSuccess = (dispatch, payload) => { // payload = { token, user }
+dispatch({ type: "LOGIN_SUCCESS", payload });
+};
+
+const registerSuccess = (dispatch) => { // No payload needed typically
+    dispatch({ type: "REGISTER_SUCCESS" });
+};
+const authError = (dispatch) => {dispatch({ type: "AUTH_ERROR" });};
+const logoutUser = (dispatch) => {dispatch({ type: "LOGOUT" });};
+const loadUser = (dispatch, user) => { // If loading user from token
+  dispatch({ type: "USER_LOADED", payload: user });
+};
+
+const setLoading = (dispatch, value) => { // value = true or false
+   dispatch({ type: "SET_LOADING", payload: value });
+};
+// ^^^^^ ADD AUTH ACTION FUNCTIONS ^^^^^
 
 export {
   VisionUIControllerProvider,
@@ -120,4 +185,10 @@ export {
   setOpenConfigurator,
   setDirection,
   setLayout,
+  loginSuccess,
+  registerSuccess,
+  authError,
+  logoutUser,
+  loadUser,
+  setLoading,
 };

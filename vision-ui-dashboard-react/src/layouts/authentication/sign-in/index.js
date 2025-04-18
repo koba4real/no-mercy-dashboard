@@ -18,6 +18,8 @@
 
 import { useState } from "react";
 import axios from 'axios';
+import { useVisionUIController, loginSuccess, authError } from "context"; // <<< ADD THIS
+import { useHistory } from "react-router-dom"; // <<< ADD FOR REDIRECT LATER
 
 // react-router-dom components
 import { Link } from "react-router-dom";
@@ -51,6 +53,8 @@ function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [controller, dispatch] = useVisionUIController(); // <<< ADD THIS
+  const history = useHistory();
   
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -71,38 +75,31 @@ function SignIn() {
     const body = JSON.stringify({ email, password });
 
     try {
-        // Send POST request to the backend login endpoint
-        const res = await axios.post('http://localhost:5001/api/auth/login', body, config);
+      const res = await axios.post('http://localhost:5001/api/auth/login', body, config);
 
-        // ---- Login Successful ----
-        console.log('Login successful:', res.data);
-        setError(''); // Clear any previous errors
+      // ---- Login Successful - UPDATED LOGIC ----
+      console.log('Login successful:', res.data);
+      setError(''); // Clear any previous error messages
 
-        // !!! IMPORTANT: Store the token (e.g., in localStorage)
-        // We will add state management (Context/Zustand) later to handle this more robustly
-        // For now, just store the token simply:
-        if (res.data.token) {
-          localStorage.setItem('token', res.data.token); // Store token
-          // For now, just log success, redirect later
-          console.log("Token stored in localStorage");
-          alert("Login Successful! Token stored. (Redirection logic will be added later)");
-          // Later: Update global auth state, redirect user to dashboard:
-          // history.push('/dashboard'); // Requires useHistory hook
-        } else {
-           setError("Login successful, but no token received."); // Should not happen
-        }
+      // Dispatch action to update global state AND store token (reducer handles localStorage)
+      loginSuccess(dispatch, { token: res.data.token, user: res.data.user });
 
+      // Redirect to the main dashboard after successful login
+      history.push('/dashboard'); // Use history to navigate
 
     } catch (err) {
-        // ---- Login Failed ----
+        // ---- Login Failed - UPDATED LOGIC ----
         console.error('Login error:', err.response ? err.response.data : err.message);
+        // Dispatch action to clear any potential auth state if login fails
+        authError(dispatch); // Dispatch AUTH_ERROR action
+
         if (err.response && err.response.data && err.response.data.message) {
-          setError(err.response.data.message); // Show error from backend (e.g., "Invalid credentials")
+          setError(err.response.data.message);
         } else {
-          setError('Login failed. Please check your connection or credentials.'); // Generic error
+          setError('Login failed. Please check your connection or credentials.');
         }
     } finally {
-         setIsLoading(false);
+          setIsLoading(false);
     }
 
 };
