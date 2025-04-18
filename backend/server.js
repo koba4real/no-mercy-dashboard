@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 // Import required packages
+const authRoutes = require('./routes/auth'); // Import our auth routes
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -17,6 +18,9 @@ app.use(cors());
 app.use(express.json());
 // Allow Express to parse URL-encoded request bodies
 app.use(express.urlencoded({ extended: true }));
+
+// --- Mount Routers ---                 
+app.use('/api/auth', authRoutes);      // Tell Express to use authRoutes for any path starting with /api/auth
 
 // --- Basic Route for Testing ---
 // Define a GET route for the root URL ('/')
