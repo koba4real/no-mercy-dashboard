@@ -18,6 +18,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { jwtDecode } from "jwt-decode";
+import ProtectedRoute from "components/ProtectedRoute/ProtectedRoute";
 
 
 // react-router components
@@ -165,14 +166,25 @@ export default function App() {
 
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
+      // Recursive call for collapse items (keep this)
       if (route.collapse) {
         return getRoutes(route.collapse);
       }
-
+  
       if (route.route) {
-        return <Route exact path={route.route} component={route.component} key={route.key} />;
+        // Check if it's an authentication route
+        const isAuthRoute = route.route.includes('/authentication/');
+  
+        if (isAuthRoute) {
+           // Render authentication routes normally
+           // These should be accessible even if logged out
+          return <Route exact path={route.route} component={route.component} key={route.key} />;
+        } else {
+          // Render all other routes using ProtectedRoute
+          return <ProtectedRoute exact path={route.route} component={route.component} key={route.key} />;
+        }
       }
-
+  
       return null;
     });
 
@@ -221,7 +233,7 @@ export default function App() {
         {layout === "vr" && <Configurator />}
         <Switch>
           {getRoutes(routes)}
-          <Redirect from="*" to="/dashboard" />
+          {/* <Redirect from="*" to="/dashboard" /> */} {/* <<< COMMENT OUT FOR NOW */}
         </Switch>
       </ThemeProvider>
     </CacheProvider>

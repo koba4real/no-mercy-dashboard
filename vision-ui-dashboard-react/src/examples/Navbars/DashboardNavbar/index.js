@@ -18,6 +18,8 @@
 
 import { useState, useEffect } from "react";
 
+import { useHistory } from "react-router-dom"; // <<< ADD THIS FOR REDIRECT
+
 // react-router components
 import { useLocation, Link } from "react-router-dom";
 
@@ -55,6 +57,7 @@ import {
   setTransparentNavbar,
   setMiniSidenav,
   setOpenConfigurator,
+  logoutUser
 } from "context";
 
 // Images
@@ -64,9 +67,15 @@ import logoSpotify from "assets/images/small-logos/logo-spotify.svg";
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useVisionUIController();
-  const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator } = controller;
+  const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator , isAuthenticated} = controller;
+  const history = useHistory(); // <<< ADD THIS
   const [openMenu, setOpenMenu] = useState(false);
   const route = useLocation().pathname.split("/").slice(1);
+
+  const handleLogout = () => {
+    logoutUser(dispatch); // Dispatch the logout action from context
+    history.push('/authentication/sign-in'); // Redirect to login page
+  };
 
   useEffect(() => {
     // Setting the navbar type
@@ -166,6 +175,21 @@ function DashboardNavbar({ absolute, light, isMini }) {
               />
             </VuiBox>
             <VuiBox color={light ? "white" : "inherit"}>
+              {/* Conditional Sign In / Logout Button */}
+            {isAuthenticated ? (
+              // If logged IN, show Logout button
+              <IconButton sx={navbarIconButton} size="small" onClick={handleLogout}>
+                <Icon /* Use a logout icon */ >logout</Icon>
+                  <VuiTypography
+                      variant="button"
+                      fontWeight="medium"
+                      color={light ? "white" : "dark"}
+                  >
+                      Logout {/* <<< Logout Text */}
+                  </VuiTypography>
+              </IconButton>
+            ) : (
+              // If logged OUT, show Sign In link
               <Link to="/authentication/sign-in">
                 <IconButton sx={navbarIconButton} size="small">
                   <Icon
@@ -173,17 +197,19 @@ function DashboardNavbar({ absolute, light, isMini }) {
                       color: light ? white.main : dark.main,
                     })}
                   >
-                    account_circle
+                    account_circle {/* Keep Sign In icon */}
                   </Icon>
                   <VuiTypography
                     variant="button"
                     fontWeight="medium"
                     color={light ? "white" : "dark"}
                   >
-                    Sign in
+                    Sign in {/* Keep Sign In Text */}
                   </VuiTypography>
                 </IconButton>
               </Link>
+            )}
+            {/* END Conditional Button */}
               <IconButton
                 size="small"
                 color="inherit"
@@ -213,6 +239,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
               </IconButton>
               {renderMenu()}
             </VuiBox>
+            
           </VuiBox>
         )}
       </Toolbar>
