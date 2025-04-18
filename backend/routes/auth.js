@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router(); // Create an Express router instance
 const bcrypt = require('bcryptjs'); // Import bcryptjs
 const User = require('../models/User'); // Import the User model
+const jwt = require('jsonwebtoken');
 
 // Import necessary things later (User model, bcryptjs, jsonwebtoken)
 
@@ -68,10 +69,62 @@ router.post('/register', async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', async (req, res) => {
-    console.log("Login route hit!"); // Temporary log
-    console.log("Request Body:", req.body); // See what data we get
-    res.status(501).json({ message: 'Login route not implemented yet.' }); // 501 = Not Implemented
-    // We will add login logic here
+    // 1. Destructure request body
+    const { email, password } = req.body;
+
+    // 2. Basic Validation
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Please provide email and password.' });
+    }
+
+    try {
+        // 3. Find user by email
+        const user = await User.findOne({ email }); // Find by email (must be unique)
+        if (!user) {
+            // Use 400 for consistency, avoids confirming if email exists or not
+            return res.status(400).json({ message: 'Invalid credentials.' });
+        }
+
+        // 4. Compare submitted password with stored hash
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            // Password doesn't match
+            return res.status(400).json({ message: 'Invalid credentials.' });
+        }
+
+        // 5. User is valid, create JWT Payload
+        // The payload contains data you want to encode in the token
+        const payload = {
+            user: {
+                id: user.id, // Include user ID for identifying the user later
+                username: user.username // Maybe username for display? Keep payload small.
+            }
+        };
+
+        // 6. Sign the JWT
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET, // Use the secret from .env
+            { expiresIn: '1h' }, // Token options: e.g., expires in 1 hour
+            (err, token) => { // Callback function
+                if (err) throw err; // Handle signing error
+                // Send the token back to the client
+                res.status(200).json({ // 200 OK
+                    message: 'Login successful!',
+                    token: token, // The generated JWT
+                    user: { // Optional: send back some user info again
+                      id: user.id,
+                      username: user.username,
+                      email: user.email
+                    }
+                 });
+            }
+        );
+
+    } catch (err) {
+        console.error('Login Error:', err.message);
+        res.status(500).json({ message: 'Server error during login.' });
+    }
 });
 
 
