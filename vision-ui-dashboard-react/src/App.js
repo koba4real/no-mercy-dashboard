@@ -62,10 +62,22 @@ import {
 
 export default function App() {
   const [controller, dispatch] = useVisionUIController();
-  const { miniSidenav, direction, layout, openConfigurator, sidenavColor } = controller;
+  const { miniSidenav, direction, layout, openConfigurator, sidenavColor,isAuthenticated  } = controller;
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const displayRoutes = useMemo(() => {
+    // If the user IS authenticated...
+    if (isAuthenticated) {
+      // ...filter OUT the sign-in and sign-up routes
+      return routes.filter(route => route.key !== 'sign-in' && route.key !== 'sign-up'); // Ensure keys match 'routes.js' exactly
+    }
+    // If the user is NOT authenticated...
+    else {
+      // ...show all routes (or technically, they'll be on a page without the main sidenav anyway)
+      return routes;
+    }
+  }, [isAuthenticated]);
 
    // VVVVV ADD THIS useEffect FOR INITIAL AUTH CHECK VVVVV
    useEffect(() => {
@@ -123,6 +135,7 @@ export default function App() {
   }, [dispatch]); // Depend on dispatch - should not change often
 
   // ^^^^^ ADD THIS useEffect FOR INITIAL AUTH CHECK ^^^^^
+  
 
   // Cache for the rtl
   useMemo(() => {
@@ -222,7 +235,7 @@ export default function App() {
               color={sidenavColor}
               brand=""
               brandName="NO MERCY UNO"
-              routes={routes}
+              routes={displayRoutes} // <<< CHANGE THIS
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
             />
@@ -246,7 +259,7 @@ export default function App() {
             color={sidenavColor}
             brand=""
             brandName="NO MERCY UNO"
-            routes={routes}
+            routes={displayRoutes} // <<< CHANGE THIS
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
