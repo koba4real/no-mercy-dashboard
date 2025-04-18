@@ -17,6 +17,7 @@
 */
 
 import { useState } from "react";
+import axios from 'axios';
 
 // react-router-dom components
 import { Link } from "react-router-dom";
@@ -45,6 +46,67 @@ function SignIn() {
 
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
 
+  // VVVVV ADD THESE STATE VARIABLES VVVVV
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    if (!email || !password) {
+        setError('Please enter both email and password.');
+        setIsLoading(false);
+        return;
+    }
+
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+    const body = JSON.stringify({ email, password });
+
+    try {
+        // Send POST request to the backend login endpoint
+        const res = await axios.post('http://localhost:5001/api/auth/login', body, config);
+
+        // ---- Login Successful ----
+        console.log('Login successful:', res.data);
+        setError(''); // Clear any previous errors
+
+        // !!! IMPORTANT: Store the token (e.g., in localStorage)
+        // We will add state management (Context/Zustand) later to handle this more robustly
+        // For now, just store the token simply:
+        if (res.data.token) {
+          localStorage.setItem('token', res.data.token); // Store token
+          // For now, just log success, redirect later
+          console.log("Token stored in localStorage");
+          alert("Login Successful! Token stored. (Redirection logic will be added later)");
+          // Later: Update global auth state, redirect user to dashboard:
+          // history.push('/dashboard'); // Requires useHistory hook
+        } else {
+           setError("Login successful, but no token received."); // Should not happen
+        }
+
+
+    } catch (err) {
+        // ---- Login Failed ----
+        console.error('Login error:', err.response ? err.response.data : err.message);
+        if (err.response && err.response.data && err.response.data.message) {
+          setError(err.response.data.message); // Show error from backend (e.g., "Invalid credentials")
+        } else {
+          setError('Login failed. Please check your connection or credentials.'); // Generic error
+        }
+    } finally {
+         setIsLoading(false);
+    }
+
+};
+
   return (
     <CoverLayout
       title="Nice to see you!"
@@ -71,7 +133,13 @@ function SignIn() {
               palette.gradients.borderLight.angle
             )}
           >
-            <VuiInput type="email" placeholder="Your email..." fontWeight="500" />
+            <VuiInput
+              type="email"
+              placeholder="Your email..."
+              fontWeight="500"
+              value={email} // <<< ADD THIS
+              onChange={(e) => { setEmail(e.target.value); setError(''); }} // <<< ADD THIS
+            />
           </GradientBorder>
         </VuiBox>
         <VuiBox mb={2}>
@@ -93,9 +161,9 @@ function SignIn() {
             <VuiInput
               type="password"
               placeholder="Your password..."
-              sx={({ typography: { size } }) => ({
-                fontSize: size.sm,
-              })}
+              sx={({ typography: { size } }) => ({ fontSize: size.sm, })}
+              value={password} // <<< ADD THIS
+              onChange={(e) => { setPassword(e.target.value); setError(''); }} // <<< ADD THIS
             />
           </GradientBorder>
         </VuiBox>
@@ -111,9 +179,18 @@ function SignIn() {
             &nbsp;&nbsp;&nbsp;&nbsp;Remember me
           </VuiTypography>
         </VuiBox>
+        {/* ==== INSERT FEEDBACK MESSAGE HERE ==== */}
+        {error && (
+          <VuiBox mt={2} mb={2} p={1} sx={{ border: '1px solid', borderColor: palette.error.main, borderRadius: '5px', backgroundColor: 'rgba(244, 67, 54, 0.1)' }}>
+            <VuiTypography variant="caption" color="error" fontWeight="medium">
+              {error}
+            </VuiTypography>
+          </VuiBox>
+        )}
+        {/* ==== END FEEDBACK MESSAGE ==== */}
         <VuiBox mt={4} mb={1}>
-          <VuiButton color="info" fullWidth>
-            SIGN IN
+          <VuiButton color="info" fullWidth onClick={handleLogin} disabled={isLoading}>
+            {isLoading ? 'Signing In...' : 'SIGN IN'}
           </VuiButton>
         </VuiBox>
         <VuiBox mt={3} textAlign="center">
