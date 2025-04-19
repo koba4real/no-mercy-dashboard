@@ -16,12 +16,13 @@
 
 */
 
-import AppBar from "@mui/material/AppBar";
+//import AppBar from "@mui/material/AppBar";
 // @mui material components
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
+import PropTypes from 'prop-types'; 
+//import Tab from "@mui/material/Tab";
+//import Tabs from "@mui/material/Tabs";
 // Images
 import burceMars from "assets/images/avatar-simmmple.png";
 // Vision UI Dashboard React base styles
@@ -31,18 +32,20 @@ import VuiAvatar from "components/VuiAvatar";
 import VuiBox from "components/VuiBox";
 import VuiTypography from "components/VuiTypography";
 // Vision UI Dashboard React icons
-import { IoCube } from "react-icons/io5";
-import { IoDocument } from "react-icons/io5";
-import { IoBuild } from "react-icons/io5";
+//import { IoCube } from "react-icons/io5";
+//import { IoDocument } from "react-icons/io5";
+//import { IoBuild } from "react-icons/io5";
 // Vision UI Dashboard React example components
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react'; // Make sure useState, useEffect are imported
+import axios from 'axios'; // If not already imported
+import { useVisionUIController, authError } from 'context'; // Import context 
 
-function Header() {
-  const [tabsOrientation, setTabsOrientation] = useState("horizontal");
-  const [tabValue, setTabValue] = useState(0);
+function Header({ username, email, score }) {
+  //const [tabsOrientation, setTabsOrientation] = useState("horizontal");
+  //const [tabValue, setTabValue] = useState(0);
 
-  useEffect(() => {
+  {/* useEffect(() => {
     // A function that sets the orientation state of the tabs.
     function handleTabsOrientation() {
       return window.innerWidth < breakpoints.values.lg
@@ -50,9 +53,7 @@ function Header() {
         : setTabsOrientation("horizontal");
     }
 
-    /** 
-     The event listener that's calling the handleTabsOrientation function when resizing the window.
-    */
+    
     window.addEventListener("resize", handleTabsOrientation);
 
     // Call the handleTabsOrientation function to set the state with the initial value.
@@ -60,7 +61,8 @@ function Header() {
 
     // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleTabsOrientation);
-  }, [tabsOrientation]);
+    }, [tabsOrientation]);
+  */}
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
 
@@ -127,13 +129,37 @@ function Header() {
               })}
             >
               <VuiTypography variant="lg" color="white" fontWeight="bold">
-                Mark Johnson
+                {/* Placeholder - User Name will go here */}
+                {username || "Player Username"} {/* Use prop or default */}
               </VuiTypography>
               <VuiTypography variant="button" color="text" fontWeight="regular">
-                mark@simmmple.com
+                {/* Placeholder - User Email will go here */}
+                {email || "player@email.com"} {/* Use prop or default */}
               </VuiTypography>
             </VuiBox>
           </Grid>
+          {/* === INSERT RANK/SCORE DISPLAY GRID ITEM === */}
+        <Grid item xs={12} md={6} sx={{ ml: "auto", display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <VuiBox sx={{ textAlign: 'center' }}> {/* Centering */}
+            {/* Display the score/rank passed via props */}
+            <VuiTypography
+               variant="h1" // Use a large variant, maybe adjust later
+               color="primary"
+               fontWeight="bold"
+               sx={{
+                 fontSize: "7rem !important", // Custom large font size! Adjust as needed
+                 lineHeight: 1 // Adjust line height for large font
+               }}
+             >
+               {score !== null && score !== undefined ? score : "23"} {/* Use score prop or default '-' */}
+             </VuiTypography>
+             <VuiTypography variant="button" color="text" fontWeight="medium" mt={1}>
+               SCORE {/* Label */}
+             </VuiTypography>
+           </VuiBox>
+         </Grid>
+        {/* === END RANK/SCORE DISPLAY GRID ITEM === */}
+          {/*
           <Grid item xs={12} md={6} lg={6.5} xl={6} xxl={4} sx={{ ml: "auto" }}>
             <AppBar position="static">
               <Tabs
@@ -148,10 +174,23 @@ function Header() {
               </Tabs>
             </AppBar>
           </Grid>
+        */}
         </Grid>
       </Card>
     </VuiBox>
   );
 }
+// Add prop types below the component function
+Header.propTypes = {
+  username: PropTypes.string,
+  email: PropTypes.string,
+  score: PropTypes.number,
+};
+
+Header.defaultProps = { // Add default props
+  username: "Player Username",
+  email: "player@email.com",
+  score: null,
+};
 
 export default Header;

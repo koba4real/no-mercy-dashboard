@@ -19,7 +19,11 @@ app.use(cors());
 app.use(express.json());
 // Allow Express to parse URL-encoded request bodies
 app.use(express.urlencoded({ extended: true }));
-
+// --- Logging Middleware ---
+app.use((req, res, next) => {
+  console.log(`INCOMING REQUEST: ${req.method} ${req.originalUrl}`);
+  next(); // Pass control to the next middleware/router
+});
 // --- Mount Routers ---                 
 app.use('/api/auth', authRoutes);      // Tell Express to use authRoutes for any path starting with /api/auth
 app.use('/api/player', playerRoutes);
